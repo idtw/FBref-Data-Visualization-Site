@@ -521,22 +521,22 @@ home_layout = page_wrap(
         _home_card(
             "Standard Player Leaderboards",
             "Filter by league, position, nationality, team, and year of birth. Sort by any stat in the dataset.",
-            "/player-leaderboards", "Explore Players --",
+            "/player-leaderboards", "Explore Players",
         ),
         _home_card(
             "Advanced Player Visualizations",
             "Custom scatter, radar charts, player rating leaderboard, KNN similarity finder, and COG map.",
-            "/players", "Advanced Players --",
+            "/players", "Advanced Players",
         ),
         _home_card(
             "Standard Team Leaderboards",
             "Sort all 96 teams across the Top 5 leagues by goals, xG, rotation, COG, and more.",
-            "/team-leaderboards", "Explore Teams --",
+            "/team-leaderboards", "Explore Teams",
         ),
         _home_card(
             "Advanced Team Visualizations",
             "Touch vs Tackle COG, tactics vs output scatter, and side-by-side positional COG pitch maps.",
-            "/teams", "Advanced Teams --",
+            "/teams", "Advanced Teams",
         ),
     ], className="g-3", style={"marginBottom": "56px"}),
 
