@@ -129,7 +129,7 @@ GLOBAL_CSS = """
 
   /* Slider overrides */
   .rc-slider-track { background-color: #d4a017 !important; }
-  .rc-slider-handle { border-color: #d4a017 !important; background-color: #d4a017 !important; }
+  .rc-slider-handle { border-color: #f0c040 !important; background-color: #f0c040 !important; box-shadow: 0 0 0 3px rgba(240,192,64,0.25) !important; }
   .rc-slider-rail { background-color: #30363d !important; }
 
   /* Nav link hover */
@@ -554,7 +554,7 @@ home_layout = page_wrap(
             "For questions or feedback, feel free to email: idw2005@nyu.edu",
             style={
                 "color": MUTED, "fontFamily": FONT_BODY,
-                "fontSize": "13px", "lineHeight": "1.8",
+                "fontSize": "15px", "lineHeight": "1.8",
                 "maxWidth": "680px",
             },
         ),
