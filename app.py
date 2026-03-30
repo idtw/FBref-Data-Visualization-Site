@@ -21,7 +21,8 @@ from sklearn.neighbors import NearestNeighbors
 import plotly.express as px
 import plotly.graph_objects as go
 
-from dash import Dash, dcc, html, Input, Output
+import dash
+from dash import Dash, dcc, html, Input, Output, State, ctx
 import dash_bootstrap_components as dbc
 
 # -----------------------------------------------------------------------------
@@ -572,58 +573,118 @@ home_layout = page_wrap(
 )
 
 # -----------------------------------------------------------------------------
-# 6. Standard Player Leaderboards layout
+# 6. Standard Player Leaderboards layout  (drawer + pagination redesign)
 # -----------------------------------------------------------------------------
 _stat_opts = [{"label": c, "value": c} for c in ALL_NUMERIC_COLS]
 
-player_lb_layout = page_wrap(card(
-    section_title("Standard Player Leaderboards", "01"),
-    filter_row(
+_default_sort_opts = [
+    {"label": "Stat 1 - Descending", "value": DEFAULT_STAT1 + "|desc"},
+    {"label": "Stat 1 - Ascending",  "value": DEFAULT_STAT1 + "|asc"},
+    {"label": "Stat 2 - Descending", "value": DEFAULT_STAT2 + "|desc"},
+    {"label": "Stat 2 - Ascending",  "value": DEFAULT_STAT2 + "|asc"},
+    {"label": "Stat 3 - Descending", "value": DEFAULT_STAT3 + "|desc"},
+    {"label": "Stat 3 - Ascending",  "value": DEFAULT_STAT3 + "|asc"},
+]
+
+_plb_drawer = html.Div([
+    html.Div([
+        html.Span("Filters & Stats", style={
+            "fontFamily": FONT_DATA, "fontSize": "11px", "letterSpacing": "1px",
+            "textTransform": "uppercase", "color": TEXT,
+        }),
+    ], style={"padding": "16px 20px", "borderBottom": f"1px solid {BORDER}",
+              "backgroundColor": SURFACE2}),
+
+    html.Div([
+        html.Div("Filters", style={
+            "fontFamily": FONT_DATA, "fontSize": "10px", "letterSpacing": "1.2px",
+            "textTransform": "uppercase", "color": MUTED, "marginBottom": "14px",
+        }),
         labeled("League", dd("plb_league",
             [{"label": "All Leagues", "value": "ALL"}] +
-            [{"label": lg, "value": lg} for lg in LEAGUES_LIST], "ALL")),
+            [{"label": lg, "value": lg} for lg in LEAGUES_LIST], "ALL", width="100%")),
+        html.Div(style={"height": "12px"}),
         labeled("Position", dd("plb_position",
             [{"label": "All Positions", "value": "ALL"}] +
-            [{"label": p, "value": p} for p in POSITIONS_LIST], "ALL")),
-        labeled("Nationality", dd("plb_nat",
-            [{"label": "All", "value": "ALL"}] +
-            [{"label": n, "value": n} for n in NATIONALITIES],
-            "ALL", width="160px", searchable=True)),
+            [{"label": p, "value": p} for p in POSITIONS_LIST], "ALL", width="100%")),
+        html.Div(style={"height": "12px"}),
         labeled("Team", dd("plb_team",
             [{"label": "All Teams", "value": "ALL"}] +
             [{"label": t, "value": t} for t in TEAMS_LIST],
-            "ALL", width="200px", searchable=True)),
-        labeled("Birth Year From", dd("plb_yob_min",
-            [{"label": "Any", "value": "ANY"}] +
-            [{"label": str(y), "value": y} for y in BIRTH_YEARS],
-            "ANY", width="140px")),
-        labeled("Birth Year To", dd("plb_yob_max",
-            [{"label": "Any", "value": "ANY"}] +
-            [{"label": str(y), "value": y} for y in BIRTH_YEARS],
-            "ANY", width="140px")),
-    ),
-    filter_row(
-        labeled("Stat 1", dd("plb_s1", _stat_opts, DEFAULT_STAT1, width="300px", searchable=True)),
-        labeled("Stat 2", dd("plb_s2", _stat_opts, DEFAULT_STAT2, width="300px", searchable=True)),
-        labeled("Stat 3", dd("plb_s3", _stat_opts, DEFAULT_STAT3, width="300px", searchable=True)),
-    ),
-    filter_row(
-        labeled("Sort By", dd("plb_sort",
-            [{"label": DEFAULT_STAT1, "value": DEFAULT_STAT1},
-             {"label": DEFAULT_STAT2, "value": DEFAULT_STAT2},
-             {"label": DEFAULT_STAT3, "value": DEFAULT_STAT3}],
-            DEFAULT_STAT1, width="300px", searchable=True)),
-        labeled("Order", dd("plb_dir", ORDER_OPTIONS, "desc", width="160px")),
-        labeled("Show", dd("plb_n",
-            [{"label": str(n), "value": n} for n in [10, 20, 30, 50]], 20, width="100px")),
-    ),
-    html.Div(id="plb_summary", style={
-        "fontFamily": FONT_DATA, "color": MUTED,
-        "fontSize": "11px", "letterSpacing": "0.8px",
-        "textTransform": "uppercase", "marginBottom": "16px",
+            "ALL", width="100%", searchable=True)),
+        html.Div(style={"height": "12px"}),
+        labeled("Nationality", dd("plb_nat",
+            [{"label": "All", "value": "ALL"}] +
+            [{"label": n, "value": n} for n in NATIONALITIES],
+            "ALL", width="100%", searchable=True)),
+        html.Div(style={"height": "12px"}),
+        html.Div([
+            html.Div(labeled("Born From", dd("plb_yob_min",
+                [{"label": "Any", "value": "ANY"}] +
+                [{"label": str(y), "value": y} for y in BIRTH_YEARS],
+                "ANY", width="100%")), style={"flex": "1"}),
+            html.Div(labeled("Born To", dd("plb_yob_max",
+                [{"label": "Any", "value": "ANY"}] +
+                [{"label": str(y), "value": y} for y in BIRTH_YEARS],
+                "ANY", width="100%")), style={"flex": "1"}),
+        ], style={"display": "flex", "gap": "10px"}),
+    ], style={"padding": "20px", "borderBottom": f"1px solid {BORDER}"}),
+
+    html.Div([
+        html.Div("Columns", style={
+            "fontFamily": FONT_DATA, "fontSize": "10px", "letterSpacing": "1.2px",
+            "textTransform": "uppercase", "color": MUTED, "marginBottom": "14px",
+        }),
+        labeled("Stat 1", dd("plb_s1", _stat_opts, DEFAULT_STAT1, width="100%", searchable=True)),
+        html.Div(style={"height": "12px"}),
+        labeled("Stat 2", dd("plb_s2", _stat_opts, DEFAULT_STAT2, width="100%", searchable=True)),
+        html.Div(style={"height": "12px"}),
+        labeled("Stat 3", dd("plb_s3", _stat_opts, DEFAULT_STAT3, width="100%", searchable=True)),
+    ], style={"padding": "20px", "borderBottom": f"1px solid {BORDER}"}),
+
+    html.Div([
+        html.Div("Sort By", style={
+            "fontFamily": FONT_DATA, "fontSize": "10px", "letterSpacing": "1.2px",
+            "textTransform": "uppercase", "color": MUTED, "marginBottom": "14px",
+        }),
+        dd("plb_sort", _default_sort_opts, _default_sort_opts[0]["value"], width="100%"),
+    ], style={"padding": "20px"}),
+
+], style={
+    "width": "280px", "flexShrink": "0",
+    "backgroundColor": SURFACE,
+    "borderLeft": f"1px solid {BORDER}",
+    "overflowY": "auto",
+})
+
+_plb_main = html.Div([
+    html.Div([
+        html.Span("Standard Player Leaderboards", style={
+            "fontFamily": FONT_HEAD, "fontWeight": "700",
+            "fontSize": "18px", "color": TEXT, "letterSpacing": "-0.3px",
+        }),
+    ], style={"padding": "18px 24px", "borderBottom": f"1px solid {BORDER}",
+              "backgroundColor": SURFACE2}),
+    html.Div(id="plb_table", style={"flex": "1", "overflowY": "auto", "padding": "0 24px"}),
+    html.Div(id="plb_pagination", style={
+        "borderTop": f"1px solid {BORDER}", "padding": "12px 24px",
+        "backgroundColor": SURFACE2,
     }),
-    html.Div(id="plb_table"),
-))
+], style={"flex": "1", "display": "flex", "flexDirection": "column",
+          "overflow": "hidden", "minWidth": "0"})
+
+player_lb_layout = page_wrap(
+    dcc.Store(id="plb_page", data=1),
+    html.Div([_plb_main, _plb_drawer], style={
+        "display": "flex", "flexDirection": "row",
+        "backgroundColor": SURFACE,
+        "border": f"1px solid {BORDER}",
+        "borderRadius": "6px",
+        "overflow": "hidden",
+        "height": "82vh",
+        "boxShadow": "0 4px 24px rgba(0,0,0,0.4)",
+    }),
+)
 
 # -----------------------------------------------------------------------------
 # 7. Advanced Player Visualizations layout
@@ -875,26 +936,14 @@ def route(pathname):
     return home_layout
 
 # -----------------------------------------------------------------------------
-# 11. Standard Player Leaderboard callbacks
+# 11. Standard Player Leaderboard callbacks  (drawer + pagination)
 # -----------------------------------------------------------------------------
-@app.callback(
-    Output("plb_sort", "options"),
-    Output("plb_sort", "value"),
-    Input("plb_s1", "value"),
-    Input("plb_s2", "value"),
-    Input("plb_s3", "value"),
-    Input("plb_sort", "value"),
-)
-def update_plb_sort_options(s1, s2, s3, current_sort):
-    opts = [{"label": s, "value": s} for s in [s1, s2, s3] if s]
-    valid = [o["value"] for o in opts]
-    new_val = current_sort if current_sort in valid else (valid[0] if valid else None)
-    return opts, new_val
 
+PAGE_SIZE = 50
 
+# Reset page to 1 whenever any filter or stat/sort changes
 @app.callback(
-    Output("plb_summary", "children"),
-    Output("plb_table",   "children"),
+    Output("plb_page", "data"),
     Input("plb_league",   "value"),
     Input("plb_position", "value"),
     Input("plb_nat",      "value"),
@@ -902,80 +951,243 @@ def update_plb_sort_options(s1, s2, s3, current_sort):
     Input("plb_yob_min",  "value"),
     Input("plb_yob_max",  "value"),
     Input("plb_sort",     "value"),
-    Input("plb_dir",      "value"),
-    Input("plb_n",        "value"),
     Input("plb_s1",       "value"),
     Input("plb_s2",       "value"),
     Input("plb_s3",       "value"),
 )
-def update_player_leaderboard(league, position, nat, team,
-                               yob_min, yob_max, sort_col, direction, n,
-                               s1, s2, s3):
+def reset_plb_page(*_):
+    return 1
+
+
+# Update sort dropdown options when stats change
+@app.callback(
+    Output("plb_sort", "options"),
+    Output("plb_sort", "value"),
+    Input("plb_s1", "value"),
+    Input("plb_s2", "value"),
+    Input("plb_s3", "value"),
+)
+def update_plb_sort_options(s1, s2, s3):
+    opts = []
+    for label, stat in [("Stat 1", s1), ("Stat 2", s2), ("Stat 3", s3)]:
+        if stat:
+            opts.append({"label": f"{label} - Descending", "value": stat + "|desc"})
+            opts.append({"label": f"{label} - Ascending",  "value": stat + "|asc"})
+    default = opts[0]["value"] if opts else None
+    return opts, default
+
+
+def _apply_plb_filters(league, position, nat, team, yob_min, yob_max):
     sub = players_filtered.copy()
     if league   != "ALL": sub = sub[sub["league"]       == league]
     if position != "ALL": sub = sub[sub["new_position"] == position]
     if nat      != "ALL": sub = sub[sub["Nationality"]  == nat]
     if team     != "ALL": sub = sub[sub["team"]         == team]
-
     by = pd.to_numeric(sub["Birth Year"], errors="coerce")
     if yob_min != "ANY":
         sub = sub[by >= int(yob_min)]
         by  = pd.to_numeric(sub["Birth Year"], errors="coerce")
     if yob_max != "ANY":
         sub = sub[by <= int(yob_max)]
+    return sub
+
+
+# Build a league -> country-code map from league names
+_LEAGUE_CODE = {
+    lg: lg.split("-")[0].strip() if "-" in lg else lg[:3].upper()
+    for lg in LEAGUES_LIST
+}
+# Hardcode the known leagues for clean codes
+for _lg, _code in [
+    ("ENG-Premier League", "ENG"), ("ESP-La Liga", "ESP"),
+    ("GER-Bundesliga", "GER"),     ("ITA-Serie A", "ITA"),
+    ("FRA-Ligue 1", "FRA"),
+]:
+    if _lg in _LEAGUE_CODE:
+        _LEAGUE_CODE[_lg] = _code
+
+
+@app.callback(
+    Output("plb_table",      "children"),
+    Output("plb_pagination", "children"),
+    Input("plb_league",      "value"),
+    Input("plb_position",    "value"),
+    Input("plb_nat",         "value"),
+    Input("plb_team",        "value"),
+    Input("plb_yob_min",     "value"),
+    Input("plb_yob_max",     "value"),
+    Input("plb_sort",        "value"),
+    Input("plb_s1",          "value"),
+    Input("plb_s2",          "value"),
+    Input("plb_s3",          "value"),
+    Input("plb_page",        "data"),
+)
+def update_player_leaderboard(league, position, nat, team,
+                               yob_min, yob_max, sort_val,
+                               s1, s2, s3, page):
+    sub = _apply_plb_filters(league, position, nat, team, yob_min, yob_max)
+
+    # Parse sort value "col|dir"
+    sort_col, direction = None, "desc"
+    if sort_val and "|" in sort_val:
+        sort_col, direction = sort_val.rsplit("|", 1)
 
     if sort_col and sort_col in sub.columns:
-        sub = sub.sort_values(sort_col, ascending=(direction == "asc")).head(n)
-    else:
-        sub = sub.head(n)
+        sub = sub.sort_values(sort_col, ascending=(direction == "asc"))
 
-    active = []
-    if league   != "ALL": active.append(league)
-    if position != "ALL": active.append(position)
-    if nat      != "ALL": active.append(nat)
-    if team     != "ALL": active.append(team)
-    if yob_min  != "ANY": active.append(f"Born >= {yob_min}")
-    if yob_max  != "ANY": active.append(f"Born <= {yob_max}")
-    summary = f"{len(sub)} players" + (" -- " + " -- ".join(active) if active else "")
+    total      = len(sub)
+    page       = page or 1
+    total_pages = max(1, -(-total // PAGE_SIZE))  # ceiling division
+    page       = min(page, total_pages)
+    start      = (page - 1) * PAGE_SIZE
+    page_sub   = sub.iloc[start: start + PAGE_SIZE]
 
-    fixed   = ["player", "team", "league", "new_position", "Birth Year", "Minutes Played"]
-    extras  = [c for c in [s1, s2, s3] if c and c in sub.columns]
-    all_c   = list(dict.fromkeys(fixed + [c for c in extras if c not in fixed]))
-    all_c   = [c for c in all_c if c in sub.columns]
-    rename  = {"player": "Player", "team": "Team", "league": "League",
-               "new_position": "Position", "Birth Year": "Birth Year", "Minutes Played": "Min"}
-    hdrs    = [rename.get(c, c) for c in all_c]
-    center  = ["League", "Position", "Birth Year", "Min"] + [rename.get(c, c) for c in extras]
+    # Columns
+    fixed  = ["player", "team", "league", "new_position", "Birth Year", "Minutes Played"]
+    extras = [c for c in [s1, s2, s3] if c and c in sub.columns]
+    all_c  = list(dict.fromkeys(fixed + [c for c in extras if c not in fixed]))
+    all_c  = [c for c in all_c if c in sub.columns]
+    rename = {
+        "player": "Player", "team": "Team", "league": "League",
+        "new_position": "Position", "Birth Year": "Born", "Minutes Played": "Min",
+    }
+    hdrs   = [rename.get(c, c) for c in all_c]
 
-    def _cell(val, style):
-        if isinstance(val, float) and not pd.isna(val):
-            val = f"{val:.2f}" if abs(val) < 100 else f"{val:.0f}"
-        elif pd.isna(val):
-            val = "--"
-        return html.Td(str(val), style=style)
-
-    base_td = {"fontFamily": FONT_BODY, "padding": "10px 14px",
-               "borderBottom": f"1px solid {SURFACE2}", "fontSize": "13px",
-               "color": TEXT, "textAlign": "left"}
+    # Styles
+    base_td = {
+        "fontFamily": FONT_BODY, "padding": "9px 14px",
+        "borderBottom": f"1px solid {SURFACE2}", "fontSize": "13px",
+        "color": TEXT, "textAlign": "left", "verticalAlign": "middle",
+    }
     mid_td  = {**base_td, "color": MUTED, "textAlign": "center"}
+    num_td  = {**mid_td, "fontFamily": FONT_DATA, "color": GOLD_L}
+    rank_td = {**mid_td, "color": GOLD, "fontFamily": FONT_DATA, "fontWeight": "700", "width": "36px"}
+
+    def _fmt(val):
+        if isinstance(val, float) and not pd.isna(val):
+            return f"{val:.2f}" if abs(val) < 100 else f"{val:.0f}"
+        if pd.isna(val):
+            return "--"
+        return str(val)
 
     rows = []
-    for rank, (_, row) in enumerate(sub.iterrows(), start=1):
-        cells = [html.Td(rank, style={**mid_td, "color": GOLD,
-                                      "fontFamily": FONT_DATA, "fontWeight": "700"})]
+    for rank, (_, row) in enumerate(page_sub.iterrows(), start=start + 1):
+        cells = [html.Td(rank, style=rank_td)]
         for c, h in zip(all_c, hdrs):
-            style = base_td if h == "Player" else \
-                    ({**base_td, "color": "#cdd9e5"} if h == "Team" else mid_td)
-            if c == sort_col:
-                style = {**style, "backgroundColor": f"{GOLD}12", "color": GOLD_L}
-            cells.append(_cell(row.get(c, ""), style))
+            raw = row.get(c, "")
+
+            # Team cell: name on top, country code below
+            if c == "team":
+                lg_val  = row.get("league", "")
+                code    = _LEAGUE_CODE.get(lg_val, lg_val[:3].upper() if lg_val else "")
+                cell_content = html.Div([
+                    html.Span(str(raw), style={"display": "block", "color": TEXT, "fontSize": "13px"}),
+                    html.Span(code, style={
+                        "display": "block", "color": MUTED,
+                        "fontSize": "10px", "fontFamily": FONT_DATA,
+                        "letterSpacing": "0.8px", "marginTop": "1px",
+                    }),
+                ])
+                style = {**base_td, "minWidth": "110px"}
+                if c == sort_col:
+                    style = {**style, "backgroundColor": GOLD + "12"}
+                cells.append(html.Td(cell_content, style=style))
+                continue
+
+            # League column: skip (info already in team cell)
+            if c == "league":
+                continue
+
+            # Player name
+            if c == "player":
+                style = {**base_td, "fontWeight": "500", "minWidth": "120px"}
+                if c == sort_col:
+                    style = {**style, "backgroundColor": GOLD + "12"}
+                cells.append(html.Td(_fmt(raw), style=style))
+                continue
+
+            # Stat columns (highlighted)
+            if c in extras:
+                style = {**num_td}
+                if c == sort_col:
+                    style = {**style, "backgroundColor": GOLD + "12", "color": GOLD_L}
+                cells.append(html.Td(_fmt(raw), style=style))
+                continue
+
+            # Everything else (Position, Born, Min)
+            cells.append(html.Td(_fmt(raw), style=mid_td))
+
         rows.append(html.Tr(cells))
 
+    # Build header -- skip "League" since it's folded into Team
+    display_hdrs = ["#"] + [h for h, c in zip(hdrs, all_c) if c != "league"]
+    center_hdrs  = ["#", "Position", "Born", "Min"] + [rename.get(c, c) for c in extras]
     table = html.Table(
-        [_table_header(["#"] + hdrs, center_cols=center), html.Tbody(rows)],
+        [_table_header(display_hdrs, center_cols=center_hdrs), html.Tbody(rows)],
         style={"width": "100%", "borderCollapse": "collapse", "backgroundColor": SURFACE},
     )
-    return summary, table
+
+    # Pagination bar
+    btn_base = {
+        "fontFamily": FONT_DATA, "fontSize": "11px", "letterSpacing": "0.5px",
+        "padding": "5px 12px", "border": f"1px solid {BORDER}",
+        "borderRadius": "4px", "cursor": "pointer",
+        "backgroundColor": SURFACE2, "color": MUTED,
+        "display": "inline-block", "margin": "0 2px",
+    }
+    btn_active = {**btn_base, "backgroundColor": GOLD, "color": BG,
+                  "border": f"1px solid {GOLD}", "fontWeight": "700"}
+    btn_disabled = {**btn_base, "opacity": "0.35", "cursor": "default"}
+
+    page_info = html.Span(
+        f"Page {page} of {total_pages} - 50 per page",
+        style={"fontFamily": FONT_DATA, "fontSize": "11px",
+               "color": MUTED, "letterSpacing": "0.5px"},
+    )
+
+    def _pgbtn(label, target_page, disabled=False, active=False):
+        style = btn_active if active else (btn_disabled if disabled else btn_base)
+        if disabled or active:
+            return html.Span(label, style=style)
+        return html.Span(label, id={"type": "plb_pgbtn", "page": target_page},
+                         n_clicks=0, style=style)
+
+    # Build page number buttons (show up to 5 around current page)
+    pg_buttons = [_pgbtn("Prev", page - 1, disabled=(page <= 1))]
+    pages_to_show = sorted(set(
+        [1] +
+        list(range(max(2, page - 1), min(total_pages, page + 2))) +
+        ([total_pages] if total_pages > 1 else [])
+    ))
+    prev_p = None
+    for p in pages_to_show:
+        if prev_p and p - prev_p > 1:
+            pg_buttons.append(html.Span("...", style={
+                "color": MUTED, "fontFamily": FONT_DATA,
+                "fontSize": "11px", "padding": "0 4px",
+            }))
+        pg_buttons.append(_pgbtn(str(p), p, active=(p == page)))
+        prev_p = p
+    pg_buttons.append(_pgbtn("Next", page + 1, disabled=(page >= total_pages)))
+
+    pagination = html.Div([
+        page_info,
+        html.Div(pg_buttons, style={"display": "inline-flex", "alignItems": "center",
+                                    "gap": "2px", "marginLeft": "auto"}),
+    ], style={"display": "flex", "alignItems": "center"})
+
+    return table, pagination
+
+
+@app.callback(
+    Output("plb_page", "data", allow_duplicate=True),
+    Input({"type": "plb_pgbtn", "page": dash.ALL}, "n_clicks"),
+    prevent_initial_call=True,
+)
+def change_plb_page(n_clicks_list):
+    if not ctx.triggered_id or not any(n_clicks_list):
+        raise dash.exceptions.PreventUpdate
+    return ctx.triggered_id["page"]
 
 # -----------------------------------------------------------------------------
 # 12. Player scatter callback
