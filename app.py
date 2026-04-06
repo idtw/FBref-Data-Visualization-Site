@@ -550,8 +550,8 @@ home_layout = page_wrap(
         html.P(
             "After Opta sold out to FIFA and billion-dollar betting companies, "
             "rejecting data democratization and creative outlets for the average football nerd, "
-            "I wanted to memorialize the FBref 2025/26 domestic season data that remains accessible "
-            "for us commoners. If this sounds of any intrigue, please take a look! "
+            "I wanted to memorialize the FBref 2025/26 domestic season data that still remains "
+            "accessible for all. If this sounds of any intrigue, please take a look! "
             "For questions or feedback, feel free to email: idw2005@nyu.edu",
             style={
                 "color": MUTED, "fontFamily": FONT_BODY,
