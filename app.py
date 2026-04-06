@@ -536,7 +536,7 @@ home_layout = page_wrap(
         ),
         _home_card(
             "Advanced Team Visualizations",
-            "Touch vs Tackle COG, tactics vs output scatter, and side-by-side positional COG pitch maps.",
+            "Touch vs Tackle Center-of-Gravity (COG), tactics vs output scatter, and side-by-side positional Center-of-Gravity (COG) pitch maps.",
             "/teams", "Advanced Teams",
         ),
     ], className="g-3", style={"marginBottom": "56px"}),
