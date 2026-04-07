@@ -526,7 +526,7 @@ home_layout = page_wrap(
         ),
         _home_card(
             "Advanced Player Visualizations",
-            "Custom scatter, radar charts, player rating leaderboard, KNN similarity finder, and COG map.",
+            "Custom scatter, radar charts, player rating leaderboard, KNN similarity finder, and Center-of-Gravity (COG) map.",
             "/players", "Advanced Players",
         ),
         _home_card(
@@ -536,7 +536,7 @@ home_layout = page_wrap(
         ),
         _home_card(
             "Advanced Team Visualizations",
-            "Touch vs Tackle Center-of-Gravity (COG), tactics vs output scatter, and side-by-side positional Center-of-Gravity (COG) pitch maps.",
+            "Touch vs Tackle COG, tactics vs output scatter, and side-by-side positional COG pitch maps.",
             "/teams", "Advanced Teams",
         ),
     ], className="g-3", style={"marginBottom": "56px"}),
